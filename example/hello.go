@@ -9,7 +9,16 @@ import(
 	"github.com/hechuangqiang/ak"
 )
 
+type loginFilter struct{}
+
+func (l *loginFilter) Execute(ctx *ak.Context) (ok bool) {
+	ok = true
+	return 
+}
+
 func main(){
+	
+	ak.AddFilter(&loginFilter{})
 	
 	ak.AddRoute("/hello",func(ctx *ak.Context) {
 		ctx.WriteJson("哈哈")

@@ -4,9 +4,9 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/http/pprof"
 	"os"
 	"path"
-	"net/http/pprof"
 )
 
 //定义简单路由
@@ -17,9 +17,9 @@ type route struct {
 
 //服务配置
 type serverConfig struct {
-	tplPath string
+	tplPath           string
 	defaultStaticDirs []string
-	profiler bool
+	profiler          bool
 }
 
 //服务
@@ -27,11 +27,12 @@ type Server struct {
 	routes []route
 	l      net.Listener
 	config *serverConfig
-	spool *spool
+	spool  *spool
+	filterChain []*Filter
 }
 
 //添加路由
-func (s *Server) addRoute(url string, f actionFunc){
+func (s *Server) addRoute(url string, f actionFunc) {
 	for _, route := range s.routes {
 		if route.r == url {
 			log.Fatal(url, "is exists")
@@ -81,39 +82,38 @@ func (s *Server) process(w http.ResponseWriter, req *http.Request) {
 	}
 	params := parseParam(req)
 	//session处理
-	ctx := Context{Request:req,
-			ResponseWriter: w, 
-			Params:params,
-			Data:make(map[string]interface{}),
-			server:mainServer}
-	cookie,err := req.Cookie(sessionIdKey)
+	ctx := Context{Request: req,
+		ResponseWriter: w,
+		Params:         params,
+		Data:           make(map[string]interface{}),
+		server:         mainServer}
+	cookie, err := req.Cookie(sessionIdKey)
 	if err == nil {
-		session,ok := s.spool.getSession(cookie.Value)
+		session, ok := s.spool.getSession(cookie.Value)
 		if ok {
 			ctx.Session = session
-		}else{
+		} else {
 			ctx.Session = newSession()
 			s.spool.addSession(ctx.Session)
-			cookie = &http.Cookie{Name:sessionIdKey,Value:ctx.Session.sessionId}
-			http.SetCookie(w,cookie)
+			cookie = &http.Cookie{Name: sessionIdKey, Value: ctx.Session.sessionId}
+			http.SetCookie(w, cookie)
 		}
-	}else{
+	} else {
 		ctx.Session = newSession()
 		s.spool.addSession(ctx.Session)
-		cookie = &http.Cookie{Name:sessionIdKey,Value:ctx.Session.sessionId}
-		http.SetCookie(w,cookie)
+		cookie = &http.Cookie{Name: sessionIdKey, Value: ctx.Session.sessionId}
+		http.SetCookie(w, cookie)
 	}
-	
-	
+
 	//路由配置查询
 	for _, route := range s.routes {
 		if rp == route.r {
-			invoke(route.handler, &ctx)
+			s.invoke(route.handler, &ctx)
 			return
 		}
 	}
 	//请求不存在，404错误
-	ctx.Abort(404,"page not fond")
+	ctx.Abort(404, "page not fond")
 }
 
 //提取参数
@@ -127,12 +127,19 @@ func parseParam(req *http.Request) map[string]string {
 }
 
 //调用自定义方法
-func invoke(function actionFunc, ctx *Context) {
-	defer func(){
+func (s *Server) invoke(function actionFunc, ctx *Context) {
+	defer func() {
 		if err := recover(); err != nil {
-			ctx.Abort(500,"server error")
+			ctx.Abort(500, "server error")
 		}
 	}()
+	
+	//执行过滤器
+	for _,filter := range s.filterChain {
+		if !filter.Execute(ctx) {
+			return
+		}
+	}
 	function(ctx)
 }
 
@@ -140,11 +147,11 @@ func invoke(function actionFunc, ctx *Context) {
 func (s *Server) Run(addr string) {
 	mux := http.NewServeMux()
 	if s.config.profiler {
-        mux.Handle("/debug/pprof/cmdline", http.HandlerFunc(pprof.Cmdline))
-        mux.Handle("/debug/pprof/profile", http.HandlerFunc(pprof.Profile))
-        mux.Handle("/debug/pprof/heap", pprof.Handler("heap"))
-        mux.Handle("/debug/pprof/symbol", http.HandlerFunc(pprof.Symbol))
-    }
+		mux.Handle("/debug/pprof/cmdline", http.HandlerFunc(pprof.Cmdline))
+		mux.Handle("/debug/pprof/profile", http.HandlerFunc(pprof.Profile))
+		mux.Handle("/debug/pprof/heap", pprof.Handler("heap"))
+		mux.Handle("/debug/pprof/symbol", http.HandlerFunc(pprof.Symbol))
+	}
 	mux.Handle("/", s)
 	l, err := net.Listen("tcp", addr)
 	if err != nil {

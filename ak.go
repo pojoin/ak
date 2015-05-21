@@ -65,6 +65,11 @@ func (ctx *Context) Abort(status int, body string) {
 	ctx.ResponseWriter.Write([]byte(body))
 }
 
+//定义过滤器
+type Filter interface{
+	Execute(ctx *Context) bool
+}
+
 var mainServer = NewServer()
 
 func NewServer() *Server {
@@ -73,12 +78,17 @@ func NewServer() *Server {
 	cfg.profiler = true
 	cfg.defaultStaticDirs = append(cfg.defaultStaticDirs, path.Join(wd, "static"))
 	cfg.tplPath = path.Join(wd, "views")
-	return &Server{config: cfg, spool: newspool()}
+	return &Server{config: cfg, spool: newspool(),filterChain: make([]*Filter,0)}
 }
 
 //添加路由
 func AddRoute(url string, f actionFunc) {
 	mainServer.addRoute(url, f)
+}
+
+//添加过滤器
+func AddFilter(filter *Filter){
+	mainServer.filterChain = append(mainServer.filterChain,filter)
 }
 
 //启动服务
