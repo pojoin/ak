@@ -1,8 +1,6 @@
 package ak
 
 import (
-	"html/template"
-	"io"
 	"log"
 	"net"
 	"net/http"
@@ -29,6 +27,17 @@ type Server struct {
 	routes []route
 	l      net.Listener
 	config *serverConfig
+}
+
+//添加路由
+func (s *Server) addRoute(url string, f actionFunc){
+	for _, route := range s.routes {
+		if route.r == url {
+			log.Fatal(url, "is exists")
+			return
+		}
+	}
+	s.routes = append(mainServer.routes, route{r: url, handler: f})
 }
 
 //查看是否是静态请求
@@ -71,56 +80,19 @@ func (s *Server) process(w http.ResponseWriter, req *http.Request) {
 	}
 	//路由配置查询
 	params := parseParam(req)
-	ctx := Context{req, params}
+	ctx := Context{Request:req,
+			ResponseWriter: w, 
+			Params:params,
+			Data:make(map[string]interface{}),
+			server:mainServer}
 	for _, route := range s.routes {
 		if rp == route.r {
-			invoke(route.handler, &ctx,w)
+			invoke(route.handler, &ctx)
 			return
 		}
 	}
 	//请求不存在，404错误
-	io.WriteString(w, "404")
-}
-
-//渲染结果
-func render(r Render, w http.ResponseWriter,ctx *Context) {
-	switch r.renderType {
-	case Tpl: //模板渲染
-		renderTpl(r,w)
-	case Json: //json渲染
-		io.WriteString(w, r.jsonStr)
-	case Redirect: // 重定向到
-		w.Header().Set("Location", r.rUrl)
-	    w.WriteHeader(301)
-	    w.Write([]byte("Redirecting to: " + r.rUrl))
-//		renderRedirect(r.rUrl,ctx,w)
-	}
-}
-
-//渲染模板
-func renderTpl(r Render,w http.ResponseWriter){
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	tplPath := path.Join(mainServer.config.tplPath,r.rUrl)
-	if !fileExists(tplPath) {
-		io.WriteString(w, "404")
-	}
-	tpl,err := template.ParseFiles(tplPath)
-	if err != nil {
-		panic(err.Error())
-	}
-	tpl.Execute(w,r.data)
-}
-
-//渲染重定向
-func renderRedirect(url string,ctx *Context,w http.ResponseWriter){
-	for _, route := range mainServer.routes {
-		if url == route.r {
-			invoke(route.handler, ctx,w)
-			return
-		}
-	}
-	//请求不存在，404错误
-	io.WriteString(w, "404")
+	ctx.Abort(404,"page not fond")
 }
 
 //提取参数
@@ -134,25 +106,13 @@ func parseParam(req *http.Request) map[string]string {
 }
 
 //调用自定义方法
-func invoke(function actionFunc, ctx *Context,w http.ResponseWriter) {
+func invoke(function actionFunc, ctx *Context) {
 	defer func(){
 		if err := recover(); err != nil {
-			io.WriteString(w,"500")
-			log.Println(err)
+			ctx.Abort(500,"server error")
 		}
 	}()
-	r := function(ctx)
-	render(r, w,ctx)
-}
-
-func Get(url string, f actionFunc) {
-	for _, route := range mainServer.routes {
-		if route.r == url {
-			log.Fatal(url, "is exists")
-			return
-		}
-	}
-	mainServer.routes = append(mainServer.routes, route{r: url, handler: f})
+	function(ctx)
 }
 
 //启动服务
