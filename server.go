@@ -27,6 +27,7 @@ type Server struct {
 	routes []route
 	l      net.Listener
 	config *serverConfig
+	spool *spool
 }
 
 //添加路由
@@ -78,13 +79,33 @@ func (s *Server) process(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 	}
-	//路由配置查询
 	params := parseParam(req)
+	//session处理
 	ctx := Context{Request:req,
 			ResponseWriter: w, 
 			Params:params,
 			Data:make(map[string]interface{}),
 			server:mainServer}
+	cookie,err := req.Cookie(sessionIdKey)
+	if err == nil {
+		session,ok := s.spool.getSession(cookie.Value)
+		if ok {
+			ctx.Session = session
+		}else{
+			ctx.Session = newSession()
+			s.spool.addSession(ctx.Session)
+			cookie = &http.Cookie{Name:sessionIdKey,Value:ctx.Session.sessionId}
+			http.SetCookie(w,cookie)
+		}
+	}else{
+		ctx.Session = newSession()
+		s.spool.addSession(ctx.Session)
+		cookie = &http.Cookie{Name:sessionIdKey,Value:ctx.Session.sessionId}
+		http.SetCookie(w,cookie)
+	}
+	
+	
+	//路由配置查询
 	for _, route := range s.routes {
 		if rp == route.r {
 			invoke(route.handler, &ctx)
