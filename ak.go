@@ -78,7 +78,7 @@ func NewServer() *Server {
 	cfg.profiler = true
 	cfg.defaultStaticDirs = append(cfg.defaultStaticDirs, path.Join(wd, "static"))
 	cfg.tplPath = path.Join(wd, "views")
-	return &Server{config: cfg, spool: newspool(),filterChain: make([]*Filter,0)}
+	return &Server{config: cfg, spool: newspool(),filterChain: make([]Filter,0)}
 }
 
 //添加路由
@@ -87,7 +87,7 @@ func AddRoute(url string, f actionFunc) {
 }
 
 //添加过滤器
-func AddFilter(filter *Filter){
+func AddFilter(filter Filter){
 	mainServer.filterChain = append(mainServer.filterChain,filter)
 }
 

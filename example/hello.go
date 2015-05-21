@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"io/ioutil"
 	"os"
 )
@@ -12,7 +13,9 @@ import(
 type loginFilter struct{}
 
 func (l *loginFilter) Execute(ctx *ak.Context) (ok bool) {
-	ok = true
+	ok = false
+	log.Println("loginFilter")
+	ctx.WriteJson("不能登录")
 	return 
 }
 

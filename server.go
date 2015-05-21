@@ -28,7 +28,7 @@ type Server struct {
 	l      net.Listener
 	config *serverConfig
 	spool  *spool
-	filterChain []*Filter
+	filterChain []Filter
 }
 
 //添加路由
