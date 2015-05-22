@@ -1,6 +1,7 @@
 package ak
 
 import (
+	"time"
 	"log"
 	"net"
 	"net/http"
@@ -92,6 +93,7 @@ func (s *Server) process(w http.ResponseWriter, req *http.Request) {
 		session, ok := s.spool.getSession(cookie.Value)
 		if ok {
 			ctx.Session = session
+			ctx.Session.t = time.Now()
 		} else {
 			ctx.Session = newSession()
 			s.spool.addSession(ctx.Session)
