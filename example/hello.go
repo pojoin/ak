@@ -13,9 +13,8 @@ import(
 type loginFilter struct{}
 
 func (l *loginFilter) Execute(ctx *ak.Context) (ok bool) {
-	ok = false
+	ok = true
 	log.Println("loginFilter")
-	ctx.WriteJson("不能登录")
 	return 
 }
 

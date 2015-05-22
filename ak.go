@@ -8,6 +8,7 @@ import (
 	"path"
 	"reflect"
 	"strconv"
+	"io/ioutil"
 )
 
 //定义方法类型
@@ -39,17 +40,39 @@ func (ctx *Context) WriteStream(filename string, contentType string, data []byte
 	ctx.ResponseWriter.Write(data)
 }
 
+//返回html
+func(ctx *Context) WriteHtml(html string){
+	ctx.ResponseWriter.Write([]byte(html))
+}
+
 //返回模板
 func (ctx *Context) WriteTpl(tplName string) {
 	tplPath := path.Join(ctx.server.config.tplPath, tplName)
 	if !fileExists(tplPath) {
 		ctx.Abort(404, tplName+" not fond")
 	}
-	tpl, err := template.ParseFiles(tplPath)
+	s := parseTmplateToStr(tplPath)
+	t, err := template.New("index").Funcs(template.FuncMap{"include": includeTmplate }).Parse(s)
+//	tpl, err := template.ParseFiles(tplPath)
 	if err != nil {
 		panic(err.Error())
 	}
-	tpl.Execute(ctx.ResponseWriter, ctx.Data)
+	t.Execute(ctx.ResponseWriter, ctx.Data)
+}
+
+func includeTmplate(tname string) template.HTML{
+	tname = path.Join(mainServer.config.tplPath,tname)
+	return template.HTML(parseTmplateToStr(tname))
+}
+
+func parseTmplateToStr(tname string) string {
+	log.Println("tname = ",tname)
+	b, err := ioutil.ReadFile(tname) 
+    if err != nil {
+            log.Println(err)
+    }
+    s := string(b)  
+    return s
 }
 
 //重定向 3xx

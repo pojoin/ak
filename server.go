@@ -130,6 +130,7 @@ func parseParam(req *http.Request) map[string]string {
 func (s *Server) invoke(function actionFunc, ctx *Context) {
 	defer func() {
 		if err := recover(); err != nil {
+			log.Println(err)
 			ctx.Abort(500, "server error")
 		}
 	}()
