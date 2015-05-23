@@ -1,13 +1,13 @@
 package ak
 
 import (
-	"time"
 	"log"
 	"net"
 	"net/http"
 	"net/http/pprof"
 	"os"
 	"path"
+	"time"
 )
 
 //定义简单路由
@@ -25,10 +25,10 @@ type serverConfig struct {
 
 //服务
 type Server struct {
-	routes []route
-	l      net.Listener
-	config *serverConfig
-	spool  *spool
+	routes      []route
+	l           net.Listener
+	config      *serverConfig
+	spool       *spool
 	filterChain []Filter
 }
 
@@ -136,9 +136,9 @@ func (s *Server) invoke(function actionFunc, ctx *Context) {
 			ctx.Abort(500, "server error")
 		}
 	}()
-	
+
 	//执行过滤器
-	for _,filter := range s.filterChain {
+	for _, filter := range s.filterChain {
 		if !filter.Execute(ctx) {
 			return
 		}
