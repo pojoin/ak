@@ -1,14 +1,12 @@
 package ak
 
 import (
-	"html/template"
 	"log"
 	"net/http"
 	"os"
 	"path"
 	"reflect"
 	"strconv"
-	"io/ioutil"
 )
 
 //定义方法类型
@@ -41,7 +39,7 @@ func (ctx *Context) WriteStream(filename string, contentType string, data []byte
 }
 
 //返回html
-func(ctx *Context) WriteHtml(html string){
+func (ctx *Context) WriteHtml(html string) {
 	ctx.ResponseWriter.Write([]byte(html))
 }
 
@@ -51,28 +49,14 @@ func (ctx *Context) WriteTpl(tplName string) {
 	if !fileExists(tplPath) {
 		ctx.Abort(404, tplName+" not fond")
 	}
-	s := parseTmplateToStr(tplPath)
-	t, err := template.New("index").Funcs(template.FuncMap{"include": includeTmplate }).Parse(s)
-//	tpl, err := template.ParseFiles(tplPath)
-	if err != nil {
-		panic(err.Error())
-	}
-	t.Execute(ctx.ResponseWriter, ctx.Data)
-}
-
-func includeTmplate(tname string) template.HTML{
-	tname = path.Join(mainServer.config.tplPath,tname)
-	return template.HTML(parseTmplateToStr(tname))
-}
-
-func parseTmplateToStr(tname string) string {
-	log.Println("tname = ",tname)
-	b, err := ioutil.ReadFile(tname) 
-    if err != nil {
-            log.Println(err)
-    }
-    s := string(b)  
-    return s
+	parseTpl(ctx.ResponseWriter, tplPath, ctx.Data)
+	//	s := parseTmplateToStr(tplPath)
+	//	t, err := template.New("index").Funcs(template.FuncMap{"include": includeTmplate}).Parse(s)
+	//	tpl, err := template.ParseFiles(tplPath)
+	//	if err != nil {
+	//		panic(err.Error())
+	//	}
+	//	t.Execute(ctx.ResponseWriter, ctx.Data)
 }
 
 //重定向 3xx
@@ -89,7 +73,7 @@ func (ctx *Context) Abort(status int, body string) {
 }
 
 //定义过滤器
-type Filter interface{
+type Filter interface {
 	Execute(ctx *Context) bool
 }
 
@@ -101,7 +85,7 @@ func NewServer() *Server {
 	cfg.profiler = true
 	cfg.defaultStaticDirs = append(cfg.defaultStaticDirs, path.Join(wd, "static"))
 	cfg.tplPath = path.Join(wd, "views")
-	return &Server{config: cfg, spool: newspool(),filterChain: make([]Filter,0)}
+	return &Server{config: cfg, spool: newspool(), filterChain: make([]Filter, 0)}
 }
 
 //添加路由
@@ -110,8 +94,8 @@ func AddRoute(url string, f actionFunc) {
 }
 
 //添加过滤器
-func AddFilter(filter Filter){
-	mainServer.filterChain = append(mainServer.filterChain,filter)
+func AddFilter(filter Filter) {
+	mainServer.filterChain = append(mainServer.filterChain, filter)
 }
 
 //启动服务
