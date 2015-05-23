@@ -83,8 +83,8 @@ func NewServer() *Server {
 	wd, _ := os.Getwd()
 	cfg := &serverConfig{}
 	cfg.profiler = true
-	cfg.defaultStaticDirs = append(cfg.defaultStaticDirs, path.Join(wd, "static"))
-	cfg.tplPath = path.Join(wd, "views")
+	cfg.defaultStaticDirs = append(cfg.defaultStaticDirs, path.Join(wd, "webroot"))
+	cfg.tplPath = path.Join(wd, "webroot")
 	return &Server{config: cfg, spool: newspool(), filterChain: make([]Filter, 0)}
 }
 
