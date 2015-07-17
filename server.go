@@ -109,7 +109,9 @@ func (s *Server) process(w http.ResponseWriter, req *http.Request) {
 
 	//路由配置查询
 	for _, route := range s.routes {
+		log.Println("rp = ", rp, ",route.r = ", route.r)
 		if rp == route.r {
+			log.Println("路由解析成功 开始执行路由...")
 			s.invoke(route.handler, &ctx)
 			return
 		}

@@ -24,7 +24,7 @@ func newSession() *Session {
 	h.Write([]byte(fmt.Sprint("%d", time.Now().Unix())))
 	sid := hex.EncodeToString(h.Sum(nil))
 	log.Println("new Session sid = ", sid)
-	return &Session{sessionId: sid, data: make(map[string]interface{}),t:time.Now()}
+	return &Session{sessionId: sid, data: make(map[string]interface{}), t: time.Now()}
 }
 
 //存入session
@@ -83,15 +83,13 @@ func (s *spool) sessionTimeOut() {
 	tick := time.Tick(15 * time.Minute)
 	for {
 		now := time.Now()
-		select{
-			case <-tick:
-			s.lock.Lock()
-			for id,sess := range s.pool {
+		select {
+		case <-tick:
+			for id, sess := range s.pool {
 				if now.After(sess.t) {
 					s.removeSession(id)
 				}
 			}
-			s.lock.Unlock()
 		}
 	}
 }
