@@ -7,8 +7,6 @@ import (
 
 
 
-//var DefaultServer = NewServer()
-
 func NewDefaultServer() *Server {
 	wd, _ := os.Getwd()
 	cfg := &serverConfig{}
@@ -21,17 +19,17 @@ func NewDefaultServer() *Server {
 	return &Server{config: cfg, spool: newspool(), filterChain: make([]Filter, 0)}
 }
 
-////启动服务
-//func Run(s *Server,addr string) {
-//	wd, err := os.Getwd()
-//	if err != nil {
-//		log.Fatal(err)
-//	}
-//	log.Println(wd)
-//	mux := http.NewServeMux()
-//	mux.Handle("/", s)
-//	err = http.ListenAndServe(addr, mux)
-//	if err != nil {
-//		log.Fatal(err)
-//	}
-//}
+//启动服务
+func RunDefaultServer(addr string) {
+	wd, err := os.Getwd()
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Println(wd)
+	mux := http.NewServeMux()
+	mux.Handle("/", NewDefaultServer())
+	err = http.ListenAndServe(addr, mux)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
