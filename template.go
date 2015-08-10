@@ -10,22 +10,24 @@ import (
 )
 
 type aktemplate struct {
-	basePath string
+	basePath   string
+	leftDelim  string
+	rightDelim string
 	*template.Template
 }
 
 //创建模板
-func newAktemplate(name string) *aktemplate {
-	t := template.New(name).Funcs(template.FuncMap{"include": includeTmplate})
-	akt := &aktemplate{}
-	akt.Template = t
+func newAktemplate(name, leftDelim, rightDelim string) *aktemplate {
+	akt := &aktemplate{leftDelim: leftDelim, rightDelim: rightDelim}
+	t := template.New(name).Funcs(template.FuncMap{"include": akt.includeTmplate})
+	akt.Template = t.Delims(akt.leftDelim, akt.rightDelim)
 	return akt
 }
 
 //解析主模板
-func parseTpl(w io.Writer, tname string, data interface{}) {
+func parseTpl(w io.Writer, tname string, data interface{},leftDelim,rightDelim string) {
 	s := parseTmplateToStr(tname)
-	t := newAktemplate("main")
+	t := newAktemplate("main",leftDelim,rightDelim)
 	t.basePath = path.Dir(tname)
 	_, err := t.Parse(s)
 	if err != nil {
@@ -35,11 +37,11 @@ func parseTpl(w io.Writer, tname string, data interface{}) {
 }
 
 //实现include方法
-func includeTmplate(tname string, data interface{}) (template.HTML, error) {
-	tname = path.Join(mainServer.config.tplPath, tname)
+func (akt *aktemplate) includeTmplate(tname string, data interface{}) (template.HTML, error) {
+	tname = path.Join(akt.basePath, tname)
 	s := parseTmplateToStr(tname)
 	var buf bytes.Buffer
-	t := newAktemplate("include")
+	t := newAktemplate("include",akt.leftDelim,akt.rightDelim)
 	_, err := t.Parse(s)
 	if err != nil {
 		return "", err

@@ -18,7 +18,10 @@ type route struct {
 
 //服务配置
 type serverConfig struct {
+	basePath		string
 	tplPath           string
+	leftDelim	string
+	rightDelim	string
 	defaultStaticDirs []string
 	profiler          bool
 }
@@ -33,14 +36,45 @@ type Server struct {
 }
 
 //添加路由
-func (s *Server) addRoute(url string, f actionFunc) {
+func (s *Server) AddRoute(url string, f actionFunc) {
 	for _, route := range s.routes {
 		if route.r == url {
 			log.Fatal(url, "is exists")
 			return
 		}
 	}
-	s.routes = append(mainServer.routes, route{r: url, handler: f})
+	s.routes = append(s.routes, route{r: url, handler: f})
+}
+
+//批量添加路由
+func (s *Server) AddRoutes(routeMap map[string]actionFunc){
+	for k,v := range routeMap{
+		s.AddRoute(k,v)
+	}
+}
+
+//添加过滤器
+func (s *Server) AddFilter(filter Filter){
+	s.filterChain = append(s.filterChain, filter)
+}
+
+//添加静态资源文件夹
+func (s *Server) AddStaticDir(staticDir string){
+	if s.config == nil {
+		s.config = &serverConfig{}
+		wd, _ := os.Getwd()
+		s.config.basePath = wd
+	}
+	s.config.defaultStaticDirs = append(s.config.defaultStaticDirs, path.Join(s.config.basePath, staticDir))
+}
+
+//设置模板标签边界
+func(s *Server) SetTplDelim(leftDelim,rightDelim string){
+	if s.config == nil{
+		s.config = &serverConfig{}
+	}
+	s.config.leftDelim = leftDelim
+	s.config.rightDelim = rightDelim
 }
 
 //查看是否是静态请求
@@ -87,9 +121,10 @@ func (s *Server) process(w http.ResponseWriter, req *http.Request) {
 		ResponseWriter: w,
 		Params:         params,
 		Data:           make(map[string]interface{}),
-		server:         mainServer}
+		server:         s}
+	//获取cookie
 	cookie, err := req.Cookie(sessionIdKey)
-	if err == nil {
+	if err == nil { //如果cookie 存在则将cookie转成session
 		session, ok := s.spool.getSession(cookie.Value)
 		if ok {
 			ctx.Session = session
@@ -100,7 +135,7 @@ func (s *Server) process(w http.ResponseWriter, req *http.Request) {
 			cookie = &http.Cookie{Name: sessionIdKey, Value: ctx.Session.sessionId}
 			http.SetCookie(w, cookie)
 		}
-	} else {
+	} else { //如果cookie不存在这个创建cookie
 		ctx.Session = newSession()
 		s.spool.addSession(ctx.Session)
 		cookie = &http.Cookie{Name: sessionIdKey, Value: ctx.Session.sessionId}
@@ -120,7 +155,7 @@ func (s *Server) process(w http.ResponseWriter, req *http.Request) {
 	ctx.Abort(404, "page not fond")
 }
 
-//提取参数
+//提取参数 将请求参数转换成map类型
 func parseParam(req *http.Request) map[string]string {
 	params := make(map[string]string)
 	req.ParseForm()
@@ -162,7 +197,9 @@ func (s *Server) Run(addr string) {
 	if err != nil {
 		log.Fatal(err)
 	}
+	log.Println("server is start runing : ",addr)
 	s.l = l
 	err = http.Serve(s.l, mux)
 	s.l.Close()
+	log.Println("server is stoped")
 }
