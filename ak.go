@@ -1,11 +1,11 @@
 package ak
 
 import (
+	"log"
+	"net/http"
 	"os"
 	"path"
 )
-
-
 
 func NewDefaultServer() *Server {
 	wd, _ := os.Getwd()
@@ -20,7 +20,7 @@ func NewDefaultServer() *Server {
 }
 
 //启动服务
-func RunDefaultServer(addr string) {
+func RunSimpleServer(addr string) {
 	wd, err := os.Getwd()
 	if err != nil {
 		log.Fatal(err)
