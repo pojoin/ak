@@ -18,10 +18,10 @@ type route struct {
 
 //服务配置
 type serverConfig struct {
-	basePath		string
+	basePath          string
 	tplPath           string
-	leftDelim	string
-	rightDelim	string
+	leftDelim         string
+	rightDelim        string
 	defaultStaticDirs []string
 	profiler          bool
 }
@@ -47,19 +47,19 @@ func (s *Server) AddRoute(url string, f actionFunc) {
 }
 
 //批量添加路由
-func (s *Server) AddRoutes(routeMap map[string]actionFunc){
-	for k,v := range routeMap{
-		s.AddRoute(k,v)
+func (s *Server) AddRoutes(routeMap map[string]actionFunc) {
+	for k, v := range routeMap {
+		s.AddRoute(k, v)
 	}
 }
 
 //添加过滤器
-func (s *Server) AddFilter(filter Filter){
+func (s *Server) AddFilter(filter Filter) {
 	s.filterChain = append(s.filterChain, filter)
 }
 
 //添加静态资源文件夹
-func (s *Server) AddStaticDir(staticDir string){
+func (s *Server) AddStaticDir(staticDir string) {
 	if s.config == nil {
 		s.config = &serverConfig{}
 		wd, _ := os.Getwd()
@@ -69,8 +69,8 @@ func (s *Server) AddStaticDir(staticDir string){
 }
 
 //设置模板标签边界
-func(s *Server) SetTplDelim(leftDelim,rightDelim string){
-	if s.config == nil{
+func (s *Server) SetTplDelim(leftDelim, rightDelim string) {
+	if s.config == nil {
 		s.config = &serverConfig{}
 	}
 	s.config.leftDelim = leftDelim
@@ -197,7 +197,7 @@ func (s *Server) Run(addr string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Println("server is start runing : ",addr)
+	log.Println("server is start runing : ", addr)
 	s.l = l
 	err = http.Serve(s.l, mux)
 	s.l.Close()

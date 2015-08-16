@@ -1,6 +1,7 @@
 package ak
 
 import (
+	"encoding/json"
 	"net/http"
 	"path"
 	"reflect"
@@ -26,6 +27,12 @@ func (ctx *Context) WriteJson(content interface{}) {
 	cv := reflect.ValueOf(content)
 	if cv.Type().Kind() == reflect.String {
 		ctx.ResponseWriter.Write([]byte(cv.String()))
+	} else if cv.Type().Kind() == reflect.Struct {
+		jsonData, err := json.Marshal(content)
+		if err != nil {
+			panic(err)
+		}
+		ctx.ResponseWriter.Write(jsonData)
 	}
 }
 
@@ -48,7 +55,7 @@ func (ctx *Context) WriteTpl(tplName string) {
 	if !fileExists(tplPath) {
 		ctx.Abort(404, tplName+" not fond")
 	}
-	parseTpl(ctx.ResponseWriter, tplPath, ctx.Data,ctx.server.config.leftDelim,ctx.server.config.rightDelim)
+	parseTpl(ctx.ResponseWriter, tplPath, ctx.Data, ctx.server.config.leftDelim, ctx.server.config.rightDelim)
 	//	s := parseTmplateToStr(tplPath)
 	//	t, err := template.New("index").Funcs(template.FuncMap{"include": includeTmplate}).Parse(s)
 	//	tpl, err := template.ParseFiles(tplPath)
