@@ -4,7 +4,6 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
-	"log"
 	"sync"
 	"time"
 )
@@ -23,7 +22,7 @@ func newSession() *Session {
 	h := md5.New()
 	h.Write([]byte(fmt.Sprint("%d", time.Now().Unix())))
 	sid := hex.EncodeToString(h.Sum(nil))
-	log.Println("new Session sid = ", sid)
+	//log.Println("new Session sid = ", sid)
 	return &Session{sessionId: sid, data: make(map[string]interface{}), t: time.Now()}
 }
 

@@ -27,7 +27,7 @@ func (ctx *Context) WriteJson(content interface{}) {
 	cv := reflect.ValueOf(content)
 	if cv.Type().Kind() == reflect.String {
 		ctx.ResponseWriter.Write([]byte(cv.String()))
-	} else if cv.Type().Kind() == reflect.Struct {
+	} else if cv.Type().Kind() == reflect.Struct || cv.Type().Kind() == reflect.Slice {
 		jsonData, err := json.Marshal(content)
 		if err != nil {
 			panic(err)
