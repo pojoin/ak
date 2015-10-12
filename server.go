@@ -23,6 +23,7 @@ type serverConfig struct {
 	leftDelim         string
 	rightDelim        string
 	defaultStaticDirs []string
+	sessionProc       bool //是否开始session处理
 	profiler          bool
 }
 
@@ -77,6 +78,16 @@ func (s *Server) SetTplDelim(leftDelim, rightDelim string) {
 	s.config.rightDelim = rightDelim
 }
 
+//是否开始session处理
+func (s *Server) StartSession(state bool) {
+	s.config.sessionProc = state
+	if s.config.sessionProc {
+		if s.spool == nil {
+			s.spool = newspool()
+		}
+	}
+}
+
 //查看是否是静态请求
 func (s *Server) tryServingFile(name string, req *http.Request, w http.ResponseWriter) bool {
 	for _, staticDir := range s.config.defaultStaticDirs {
@@ -116,30 +127,34 @@ func (s *Server) process(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 	params := parseParam(req)
-	//session处理
-	ctx := Context{Request: req,
+	ctx := Context{
+		Request:        req,
 		ResponseWriter: w,
 		Params:         params,
 		Data:           make(map[string]interface{}),
-		server:         s}
+		server:         s,
+	}
+	//session处理
 	//获取cookie
-	cookie, err := req.Cookie(sessionIdKey)
-	if err == nil { //如果cookie 存在则将cookie转成session
-		session, ok := s.spool.getSession(cookie.Value)
-		if ok {
-			ctx.Session = session
-			ctx.Session.t = time.Now()
-		} else {
+	if s.config.sessionProc {
+		cookie, err := req.Cookie(sessionIdKey)
+		if err == nil { //如果cookie 存在则将cookie转成session
+			session, ok := s.spool.getSession(cookie.Value)
+			if ok {
+				ctx.Session = session
+				ctx.Session.t = time.Now()
+			} else {
+				ctx.Session = newSession()
+				s.spool.addSession(ctx.Session)
+				cookie = &http.Cookie{Name: sessionIdKey, Value: ctx.Session.sessionId}
+				http.SetCookie(w, cookie)
+			}
+		} else { //如果cookie不存在这个创建cookie
 			ctx.Session = newSession()
 			s.spool.addSession(ctx.Session)
 			cookie = &http.Cookie{Name: sessionIdKey, Value: ctx.Session.sessionId}
 			http.SetCookie(w, cookie)
 		}
-	} else { //如果cookie不存在这个创建cookie
-		ctx.Session = newSession()
-		s.spool.addSession(ctx.Session)
-		cookie = &http.Cookie{Name: sessionIdKey, Value: ctx.Session.sessionId}
-		http.SetCookie(w, cookie)
 	}
 
 	//路由配置查询

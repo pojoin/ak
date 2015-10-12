@@ -29,17 +29,23 @@ func SetTplDelim(leftDelim, rightDelim string) {
 	simpleServer.SetTplDelim(leftDelim, rightDelim)
 }
 
+//开启session处理
+func StartSession(state bool) {
+	simpleServer.StartSession(state)
+}
+
 //创建默认server
 func NewDefaultServer() *Server {
 	wd, _ := os.Getwd()
 	cfg := &serverConfig{}
 	cfg.basePath = wd
 	cfg.profiler = true
+	cfg.sessionProc = false
 	cfg.leftDelim = "{{"
 	cfg.rightDelim = "}}"
 	cfg.defaultStaticDirs = append(cfg.defaultStaticDirs, path.Join(wd, "web"))
 	cfg.tplPath = path.Join(wd, "web")
-	return &Server{config: cfg, spool: newspool(), filterChain: make([]Filter, 0)}
+	return &Server{config: cfg, filterChain: make([]Filter, 0)}
 }
 
 //启动simpleServer服务
