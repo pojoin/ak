@@ -77,3 +77,21 @@ func (ctx *Context) Abort(status int, body string) {
 	ctx.ResponseWriter.WriteHeader(status)
 	ctx.ResponseWriter.Write([]byte(body))
 }
+
+//将请求数据的json格式信息转换成结构
+func (ctx *Context) ParseReqBodyJson(obj interface{}) error {
+	decoder := json.NewDecoder(ctx.Request.Body)
+	k := reflect.ValueOf(obj).Type().Kind()
+	var err error
+	switch k {
+	case reflect.Struct:
+		err = decoder.Decode(&obj)
+	case reflect.Ptr:
+		err = decoder.Decode(obj)
+	case reflect.Array:
+		err = decoder.Decode(obj)
+	case reflect.String:
+		err = decoder.Decode(&obj)
+	}
+	return err
+}
