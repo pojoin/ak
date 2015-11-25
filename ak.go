@@ -5,13 +5,17 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"strings"
 )
 
 var simpleServer = NewDefaultServer()
 
 //给simpleServer添加路由
 func AddRoute(method, url string, f actionFunc) {
-	simpleServer.AddRoute(method, url, f)
+	methods := strings.Split(method, ",")
+	for _, m := range methods {
+		simpleServer.AddRoute(m, url, f)
+	}
 }
 
 //给simpleServer添加过滤器
