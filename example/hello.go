@@ -1,59 +1,60 @@
 package main
 
 import (
-	"log"
 	"io/ioutil"
+	"log"
 	"os"
 )
 
-import(
+import (
 	"github.com/hechuangqiang/ak"
 )
 
 type loginFilter struct{}
 
 func (l *loginFilter) Execute(ctx *ak.Context) (ok bool) {
-	ok = true
+	ok = false
 	log.Println("loginFilter")
-	return 
+	ctx.WriteJson("没有权限")
+	return
 }
 
-func main(){
-	
-	ak.AddFilter(&loginFilter{})
-	
-	ak.AddRoute("/hello",func(ctx *ak.Context) {
-		ctx.WriteJson("哈哈")
+func main() {
+
+	ak.AddFilter("/*", &loginFilter{})
+
+	ak.AddRoute("GET", "/hello/:name/ok/", func(ctx *ak.Context) {
+		ctx.WriteJson("hello , " + ctx.Params["name"])
 	})
-	
-	ak.AddRoute("/test",func(ctx *ak.Context){
+
+	ak.AddRoute("GET", "/test/", func(ctx *ak.Context) {
 		ctx.Data["name"] = "张三"
 		ctx.WriteTpl("text.html")
 	})
-	
-	ak.AddRoute("/user",func(ctx *ak.Context) {
-		ctx.Data["users"] = []string{"张三","李四","王五"}
+
+	ak.AddRoute("GET", "/user/", func(ctx *ak.Context) {
+		ctx.Data["users"] = []string{"张三", "李四", "王五"}
 		ctx.WriteTpl("user/user.htm")
 	})
-	
-	ak.AddRoute("/redirct",func(ctx *ak.Context){
+
+	ak.AddRoute("GET", "/redirct/", func(ctx *ak.Context) {
 		ctx.Redirect("/user")
 	})
-	
-	ak.AddRoute("/panic",func(ctx *ak.Context) {
+
+	ak.AddRoute("GET", "/panic/", func(ctx *ak.Context) {
 		panic("ok")
 	})
-	
-	ak.AddRoute("/download",func(ctx *ak.Context){
-		f,err := os.Open("hello.go")
+
+	ak.AddRoute("GET", "/download/", func(ctx *ak.Context) {
+		f, err := os.Open("hello.go")
 		if err != nil {
-			ctx.Abort(500,"open file fail")
+			ctx.Abort(500, "open file fail")
 			return
 		}
 		defer f.Close()
-		buf,_ := ioutil.ReadAll(f)
-		ctx.WriteStream("1t.html","application/octet-stream",buf)
+		buf, _ := ioutil.ReadAll(f)
+		ctx.WriteStream("1t.html", "application/octet-stream", buf)
 	})
-	
-	ak.Run(":9000")
+
+	ak.RunSimpleServer(":9000")
 }

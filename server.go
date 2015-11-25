@@ -1,20 +1,16 @@
 package ak
 
 import (
+	"fmt"
 	"log"
 	"net"
 	"net/http"
 	"net/http/pprof"
 	"os"
 	"path"
+	"strings"
 	"time"
 )
-
-//定义简单路由
-type route struct {
-	r       string
-	handler actionFunc
-}
 
 //服务配置
 type serverConfig struct {
@@ -29,34 +25,21 @@ type serverConfig struct {
 
 //服务
 type Server struct {
-	routes      []route
+	router      *router
 	l           net.Listener
 	config      *serverConfig
 	spool       *spool
-	filterChain []Filter
+	filterChain map[string]Filter
 }
 
 //添加路由
-func (s *Server) AddRoute(url string, f actionFunc) {
-	for _, route := range s.routes {
-		if route.r == url {
-			log.Fatal(url, "is exists")
-			return
-		}
-	}
-	s.routes = append(s.routes, route{r: url, handler: f})
-}
-
-//批量添加路由
-func (s *Server) AddRoutes(routeMap map[string]actionFunc) {
-	for k, v := range routeMap {
-		s.AddRoute(k, v)
-	}
+func (s *Server) AddRoute(method, url string, f actionFunc) {
+	s.router.AddRoute(method, url, f)
 }
 
 //添加过滤器
-func (s *Server) AddFilter(filter Filter) {
-	s.filterChain = append(s.filterChain, filter)
+func (s *Server) AddFilter(pattern string, filter Filter) {
+	s.filterChain[pattern] = filter
 }
 
 //添加静态资源文件夹
@@ -117,6 +100,20 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 //请求处理
 func (s *Server) process(w http.ResponseWriter, req *http.Request) {
+	ctx := &Context{
+		Request:        req,
+		ResponseWriter: w,
+		Data:           make(map[string]interface{}),
+		server:         s,
+		closed:         false,
+	}
+	defer func() {
+		if err := recover(); err != nil {
+			log.Println(err)
+			ctx.Abort(500, fmt.Sprint(err))
+		}
+		ctx = nil
+	}()
 	rp := req.URL.Path
 	log.Println(rp)
 	//	io.WriteString(w,"URL:" + rp)
@@ -126,14 +123,8 @@ func (s *Server) process(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 	}
-	params := parseParam(req)
-	ctx := Context{
-		Request:        req,
-		ResponseWriter: w,
-		Params:         params,
-		Data:           make(map[string]interface{}),
-		server:         s,
-	}
+
+	ctx.Params = parseParam(req)
 	//session处理
 	//获取cookie
 	if s.config.sessionProc {
@@ -158,16 +149,18 @@ func (s *Server) process(w http.ResponseWriter, req *http.Request) {
 	}
 
 	//路由配置查询
-	for _, route := range s.routes {
-		//log.Println("rp = ", rp, ",route.r = ", route.r)
-		if rp == route.r {
-			//log.Println("路由解析成功 开始执行路由...")
-			s.invoke(route.handler, &ctx)
-			return
+	params, fn := s.router.find(rp, req.Method)
+	if params != nil && fn != nil {
+		for k, v := range params {
+			ctx.Params[k] = v
 		}
+		s.invoke(fn, ctx)
+		return
+	} else {
+		//请求不存在，404错误
+		ctx.Abort(404, "["+rp+"] page not fond")
 	}
-	//请求不存在，404错误
-	ctx.Abort(404, "page not fond")
+
 }
 
 //提取参数 将请求参数转换成map类型
@@ -182,18 +175,20 @@ func parseParam(req *http.Request) map[string]string {
 
 //调用自定义方法
 func (s *Server) invoke(function actionFunc, ctx *Context) {
-	defer func() {
-		if err := recover(); err != nil {
-			log.Println(err)
-			ctx.Abort(500, "server error")
-		}
-	}()
-
 	//执行过滤器
-	for _, filter := range s.filterChain {
-		if !filter.Execute(ctx) {
-			return
+	for pattern, filter := range s.filterChain {
+		if l := len(pattern); pattern[l-1] == '*' {
+			if strings.HasPrefix(ctx.Request.URL.Path, pattern[:l-1]) {
+				if !filter.Execute(ctx) {
+					return
+				}
+			}
+		} else if pattern == ctx.Request.URL.Path {
+			if !filter.Execute(ctx) {
+				return
+			}
 		}
+
 	}
 	function(ctx)
 }

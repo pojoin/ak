@@ -25,9 +25,9 @@ func newAktemplate(name, leftDelim, rightDelim string) *aktemplate {
 }
 
 //解析主模板
-func parseTpl(w io.Writer, tname string, data interface{},leftDelim,rightDelim string) {
+func parseTpl(w io.Writer, tname string, data interface{}, leftDelim, rightDelim string) {
 	s := parseTmplateToStr(tname)
-	t := newAktemplate("main",leftDelim,rightDelim)
+	t := newAktemplate("main", leftDelim, rightDelim)
 	t.basePath = path.Dir(tname)
 	_, err := t.Parse(s)
 	if err != nil {
@@ -41,7 +41,7 @@ func (akt *aktemplate) includeTmplate(tname string, data interface{}) (template.
 	tname = path.Join(akt.basePath, tname)
 	s := parseTmplateToStr(tname)
 	var buf bytes.Buffer
-	t := newAktemplate("include",akt.leftDelim,akt.rightDelim)
+	t := newAktemplate("include", akt.leftDelim, akt.rightDelim)
 	_, err := t.Parse(s)
 	if err != nil {
 		return "", err
