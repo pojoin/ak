@@ -21,7 +21,7 @@ func (l *loginFilter) Execute(ctx *ak.Context) (ok bool) {
 
 func main() {
 
-	ak.AddFilter("/*", &loginFilter{})
+	ak.AddFilter(&loginFilter{})
 
 	ak.AddRoute("GET", "/hello/:name/ok/", func(ctx *ak.Context) {
 		ctx.WriteJson("hello , " + ctx.Params["name"])

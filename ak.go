@@ -19,8 +19,8 @@ func AddRoute(method, url string, f actionFunc) {
 }
 
 //给simpleServer添加过滤器
-func AddFilter(pattern string, filter Filter) {
-	simpleServer.AddFilter(pattern, filter)
+func AddFilter(filter Filter) {
+	simpleServer.AddFilter(filter)
 }
 
 //给simpleServer添加静态文件夹
@@ -49,7 +49,7 @@ func NewDefaultServer() *Server {
 	cfg.rightDelim = "}}"
 	cfg.defaultStaticDirs = append(cfg.defaultStaticDirs, path.Join(wd, "web"))
 	cfg.tplPath = path.Join(wd, "web")
-	return &Server{config: cfg, filterChain: make(map[string]Filter), router: newRouter()}
+	return &Server{config: cfg, filterChain: make([]Filter, 0), router: newRouter()}
 }
 
 //启动simpleServer服务

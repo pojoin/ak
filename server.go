@@ -8,7 +8,6 @@ import (
 	"net/http/pprof"
 	"os"
 	"path"
-	"strings"
 	"time"
 )
 
@@ -29,7 +28,7 @@ type Server struct {
 	l           net.Listener
 	config      *serverConfig
 	spool       *spool
-	filterChain map[string]Filter
+	filterChain []Filter
 }
 
 //添加路由
@@ -38,8 +37,8 @@ func (s *Server) AddRoute(method, url string, f actionFunc) {
 }
 
 //添加过滤器
-func (s *Server) AddFilter(pattern string, filter Filter) {
-	s.filterChain[pattern] = filter
+func (s *Server) AddFilter(filter Filter) {
+	s.filterChain = append(s.filterChain, filter)
 }
 
 //添加静态资源文件夹
@@ -176,17 +175,9 @@ func parseParam(req *http.Request) map[string]string {
 //调用自定义方法
 func (s *Server) invoke(function actionFunc, ctx *Context) {
 	//执行过滤器
-	for pattern, filter := range s.filterChain {
-		if l := len(pattern); pattern[l-1] == '*' {
-			if strings.HasPrefix(ctx.Request.URL.Path, pattern[:l-1]) {
-				if !filter.Execute(ctx) {
-					return
-				}
-			}
-		} else if pattern == ctx.Request.URL.Path {
-			if !filter.Execute(ctx) {
-				return
-			}
+	for _, filter := range s.filterChain {
+		if !filter.Execute(ctx) {
+			return
 		}
 
 	}
