@@ -54,14 +54,10 @@ func NewDefaultServer() *Server {
 
 //启动simpleServer服务
 func RunSimpleServer(addr string) {
-	wd, err := os.Getwd()
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Println(wd)
+	log.Println("webServer addr :", addr)
 	mux := http.NewServeMux()
 	mux.Handle("/", simpleServer)
-	err = http.ListenAndServe(addr, mux)
+	err := http.ListenAndServe(addr, mux)
 	if err != nil {
 		log.Fatal(err)
 	}
