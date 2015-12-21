@@ -11,6 +11,16 @@ import (
 	"time"
 )
 
+const (
+	GET     = "GET"
+	POST    = "POST"
+	PUT     = "PUT"
+	PATCH   = "PATCH"
+	DELETE  = "DELETE"
+	HEAD    = "HEAD"
+	OPTIONS = "OPTIONS"
+)
+
 //服务配置
 type serverConfig struct {
 	basePath          string
@@ -117,7 +127,7 @@ func (s *Server) process(w http.ResponseWriter, req *http.Request) {
 	log.Println(req.Method, rp)
 	//	io.WriteString(w,"URL:" + rp)
 	//静态文件请求处理
-	if req.Method == "GET" || req.Method == "HEAD" {
+	if req.Method == GET || req.Method == HEAD {
 		if s.tryServingFile(rp, req, w) {
 			return
 		}
