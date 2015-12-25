@@ -124,7 +124,6 @@ func (s *Server) process(w http.ResponseWriter, req *http.Request) {
 		ctx = nil
 	}()
 	rp := req.URL.Path
-	log.Println(req.Method, rp)
 	//	io.WriteString(w,"URL:" + rp)
 	//静态文件请求处理
 	if req.Method == GET || req.Method == HEAD {
@@ -133,6 +132,7 @@ func (s *Server) process(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
+	log.Println(req.Method, rp)
 	ctx.Params = parseParam(req)
 	//session处理
 	//获取cookie
