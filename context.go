@@ -2,6 +2,7 @@ package ak
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"path"
 	"reflect"
@@ -29,9 +30,10 @@ func (ctx *Context) WriteJson(content interface{}) {
 	}
 	ctx.ResponseWriter.Header().Set("Content-Type", "application/json;charset=UTF-8")
 	cv := reflect.ValueOf(content)
+	log.Println("cv = ", cv.Type().Kind())
 	if cv.Type().Kind() == reflect.String {
 		ctx.ResponseWriter.Write([]byte(cv.String()))
-	} else if cv.Type().Kind() == reflect.Struct || cv.Type().Kind() == reflect.Slice {
+	} else if cv.Type().Kind() == reflect.Struct || cv.Type().Kind() == reflect.Slice || cv.Type().Kind() == reflect.Ptr {
 		jsonData, err := json.Marshal(content)
 		if err != nil {
 			panic(err)
