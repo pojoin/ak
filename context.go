@@ -33,7 +33,7 @@ func (ctx *Context) WriteJson(content interface{}) {
 	log.Println("cv = ", cv.Type().Kind())
 	if cv.Type().Kind() == reflect.String {
 		ctx.ResponseWriter.Write([]byte(cv.String()))
-	} else if cv.Type().Kind() == reflect.Struct || cv.Type().Kind() == reflect.Slice || cv.Type().Kind() == reflect.Ptr {
+	} else if cv.Type().Kind() == reflect.Struct || cv.Type().Kind() == reflect.Slice || cv.Type().Kind() == reflect.Ptr || cv.Type().Kind() == reflect.Map {
 		jsonData, err := json.Marshal(content)
 		if err != nil {
 			panic(err)
