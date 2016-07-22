@@ -22,6 +22,16 @@ type Context struct {
 	closed         bool
 }
 
+//获取参数int
+func (ctx *Context) ArgumentInt(name string) (int, error) {
+	return strconv.Atoi(ctx.Params[name])
+}
+
+//获取参数string
+func (ctx *Context) ArgumentString(name string) string {
+	return ctx.Params[name]
+}
+
 //返回json
 func (ctx *Context) WriteJson(content interface{}) {
 	if ctx.closed {
