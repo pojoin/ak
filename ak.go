@@ -28,6 +28,11 @@ func AddStaticDir(dir string) {
 	simpleServer.AddStaticDir(dir)
 }
 
+//给simpleServer设置模板路径
+func SetTplPath(tplPath string) {
+	simpleServer.SetTplPath(tplPath)
+}
+
 //给simpleServer设置模板标签边界
 func SetTplDelim(leftDelim, rightDelim string) {
 	simpleServer.SetTplDelim(leftDelim, rightDelim)
@@ -54,7 +59,9 @@ func NewDefaultServer() *Server {
 
 //启动simpleServer服务
 func RunSimpleServer(addr string) {
-	log.Println("webServer addr :", addr)
+	log.Println("webServer addr	", addr)
+	log.Println("tplPath		:", simpleServer.config.tplPath)
+	log.Println("staticDir		:", simpleServer.config.defaultStaticDirs)
 	mux := http.NewServeMux()
 	mux.Handle("/", simpleServer)
 	err := http.ListenAndServe(addr, mux)

@@ -51,6 +51,16 @@ func (s *Server) AddFilter(filter Filter) {
 	s.filterChain = append(s.filterChain, filter)
 }
 
+//设置模板路径
+func (s *Server) SetTplPath(tplPath string) {
+	if s.config == nil {
+		s.config = &serverConfig{}
+		wd, _ := os.Getwd()
+		s.config.basePath = wd
+	}
+	s.config.tplPath = tplPath
+}
+
 //添加静态资源文件夹
 func (s *Server) AddStaticDir(staticDir string) {
 	if s.config == nil {
@@ -109,6 +119,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 //请求处理
 func (s *Server) process(w http.ResponseWriter, req *http.Request) {
+	st := time.Now()
 	ctx := &Context{
 		Request:        req,
 		ResponseWriter: w,
@@ -164,11 +175,12 @@ func (s *Server) process(w http.ResponseWriter, req *http.Request) {
 			ctx.Params[k] = v
 		}
 		s.invoke(fn, ctx)
-		return
 	} else {
 		//请求不存在，404错误
 		ctx.Abort(404, "["+rp+"] page not fond")
 	}
+	dis := time.Now().Sub(st).Seconds()
+	log.Println(req.Method, "[", dis, "]", rp)
 
 }
 
