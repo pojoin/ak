@@ -59,7 +59,7 @@ func NewDefaultServer() *Server {
 
 //启动simpleServer服务
 func RunSimpleServer(addr string) {
-	log.Println("webServer addr	", addr)
+	log.Println("webServer addr	:", "[", addr, "]")
 	log.Println("tplPath		:", simpleServer.config.tplPath)
 	log.Println("staticDir		:", simpleServer.config.defaultStaticDirs)
 	mux := http.NewServeMux()
