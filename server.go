@@ -120,21 +120,29 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 //请求处理
 func (s *Server) process(w http.ResponseWriter, req *http.Request) {
 	st := time.Now()
+	isStatic := true
 	ctx := &Context{
 		Request:        req,
 		ResponseWriter: w,
 		Data:           make(map[string]interface{}),
 		server:         s,
+		status:         http.StatusOK,
 		closed:         false,
 	}
+	rp := req.URL.Path
 	defer func() {
 		if err := recover(); err != nil {
 			log.Println(err)
-			ctx.Abort(500, fmt.Sprint(err))
+			ctx.status = http.StatusInternalServerError
+			ctx.Abort(ctx.status, fmt.Sprint(err))
+		}
+		if isStatic {
+		} else {
+			dis := time.Now().Sub(st).Seconds() * 1000
+			log.Printf("%s [%d] [%.3f ms] %s\n", req.Method, ctx.status, dis, rp)
 		}
 		ctx = nil
 	}()
-	rp := req.URL.Path
 	//	io.WriteString(w,"URL:" + rp)
 	//静态文件请求处理
 	if req.Method == GET || req.Method == HEAD {
@@ -142,8 +150,8 @@ func (s *Server) process(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 	}
-
-	log.Println(req.Method, rp)
+	isStatic = false
+	//log.Println(req.Method, rp)
 	ctx.Params = parseParam(req)
 	//session处理
 	//获取cookie
@@ -179,8 +187,6 @@ func (s *Server) process(w http.ResponseWriter, req *http.Request) {
 		//请求不存在，404错误
 		ctx.Abort(404, "["+rp+"] page not fond")
 	}
-	dis := time.Now().Sub(st).Seconds()
-	log.Println(req.Method, "[", dis, "]", rp)
 
 }
 

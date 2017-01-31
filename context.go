@@ -19,7 +19,12 @@ type Context struct {
 	Data           map[string]interface{} //返回参数定义
 	server         *Server
 	Session        *Session
+	status         int //http状态
 	closed         bool
+}
+
+func (ctx *Context) SetStatus(status int) {
+	ctx.status = status
 }
 
 //获取参数int
@@ -37,6 +42,7 @@ func (ctx *Context) WriteJson(content interface{}) {
 	if ctx.closed {
 		return
 	}
+	ctx.ResponseWriter.WriteHeader(ctx.status)
 	ctx.ResponseWriter.Header().Set("Content-Type", "application/json;charset=UTF-8")
 	cv := reflect.ValueOf(content)
 	vkind := cv.Type().Kind()
@@ -57,6 +63,7 @@ func (ctx *Context) WriteStream(filename string, contentType string, data []byte
 	if ctx.closed {
 		return
 	}
+	ctx.ResponseWriter.WriteHeader(ctx.status)
 	ctx.ResponseWriter.Header().Add("Content-Disposition", "attachment;filename="+filename)
 	ctx.ResponseWriter.Header().Set("Content-Type", contentType)
 	ctx.ResponseWriter.Header().Set("Content-Length", strconv.Itoa(len(data)))
@@ -65,11 +72,12 @@ func (ctx *Context) WriteStream(filename string, contentType string, data []byte
 }
 
 //返回html
-func (ctx *Context) WriteHtml(html string) {
+func (ctx *Context) WriteHtml(htmlStr string) {
 	if ctx.closed {
 		return
 	}
-	ctx.ResponseWriter.Write([]byte(html))
+	ctx.ResponseWriter.WriteHeader(ctx.status)
+	ctx.ResponseWriter.Write([]byte(htmlStr))
 	ctx.closed = true
 }
 
@@ -78,9 +86,10 @@ func (ctx *Context) WriteTpl(tplName string) {
 	if ctx.closed {
 		return
 	}
+	ctx.ResponseWriter.WriteHeader(ctx.status)
 	tplPath := path.Join(ctx.server.config.tplPath, tplName)
 	if !fileExists(tplPath) {
-		ctx.Abort(404, tplName+" not fond")
+		ctx.Abort(http.StatusNotFound, tplName+" not fond")
 	}
 	parseTpl(ctx.ResponseWriter, tplPath, ctx.Data, ctx.server.config.leftDelim, ctx.server.config.rightDelim)
 	//	s := parseTmplateToStr(tplPath)
@@ -98,8 +107,9 @@ func (ctx *Context) Redirect(url_ string) {
 	if ctx.closed {
 		return
 	}
+	ctx.status = http.StatusMovedPermanently
 	ctx.ResponseWriter.Header().Set("Location", url_)
-	ctx.ResponseWriter.WriteHeader(301)
+	ctx.ResponseWriter.WriteHeader(http.StatusMovedPermanently)
 	ctx.ResponseWriter.Write([]byte("Redirecting to: " + url_))
 	ctx.closed = true
 }
@@ -109,6 +119,7 @@ func (ctx *Context) Abort(status int, body string) {
 	if ctx.closed {
 		return
 	}
+	ctx.status = status
 	ctx.ResponseWriter.WriteHeader(status)
 	ctx.ResponseWriter.Write([]byte(body))
 	ctx.closed = true
