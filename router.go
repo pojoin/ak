@@ -1,6 +1,8 @@
 package ak
 
 import (
+	"fmt"
+	"log"
 	"net/url"
 	"path"
 	"regexp"
@@ -25,6 +27,10 @@ func newRouter() *router {
 }
 
 func (rt *router) AddRoute(method, pattern string, fn actionFunc) {
+	if rt.isRouteExists(pattern, method) {
+		log.Fatalf(fmt.Sprintf("error:addRoute url[%s %s] is exist", method, pattern))
+	}
+	log.Printf("addRoute [%s] [%s] [%v]\n", method, pattern, fn)
 	r := &route{fn: fn, method: method}
 	r.regex, r.params = rt.parsePattern(pattern)
 	rt.routes = append(rt.routes, r)
@@ -41,6 +47,23 @@ func (rt *router) parsePattern(pattern string) (regex *regexp.Regexp, params []s
 	}
 	regex, _ = regexp.Compile("^" + strings.Join(segments, "/") + "$")
 	return
+}
+
+func (rt *router) isRouteExists(pattern, method string) bool {
+	sfx := path.Ext(pattern)
+	pattern = strings.Replace(pattern, sfx, "", -1)
+	pattern = url.QueryEscape(pattern)
+
+	if !strings.HasSuffix(pattern, "%2F") && sfx == "" {
+		pattern += "%2F"
+	}
+	pattern = strings.Replace(pattern, "%2F", "/", -1)
+	for _, r := range rt.routes {
+		if r.regex.MatchString(pattern) && r.method == method {
+			return true
+		}
+	}
+	return false
 }
 
 func (rt *router) find(pattern string, method string) (params map[string]string, fn actionFunc) {
