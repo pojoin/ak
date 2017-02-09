@@ -11,15 +11,44 @@ import (
 	"time"
 )
 
+type Method int
+
 const (
-	GET     = "GET"
-	POST    = "POST"
-	PUT     = "PUT"
-	PATCH   = "PATCH"
-	DELETE  = "DELETE"
-	HEAD    = "HEAD"
-	OPTIONS = "OPTIONS"
+	GET     = 0x00002000
+	POST    = 0x00004000
+	PUT     = 0x00008000
+	PATCH   = 0x00020000
+	DELETE  = 0x00040000
+	HEAD    = 0x00080000
+	OPTIONS = 0x00200000
+	CONNECT = 0x00400000
+	TRACE   = 0x00800000
 )
+
+func (m Method) String() string {
+	var r string
+	switch int(m) {
+	case GET:
+		r = http.MethodGet
+	case POST:
+		r = http.MethodPost
+	case PUT:
+		r = http.MethodPut
+	case PATCH:
+		r = http.MethodPatch
+	case DELETE:
+		r = http.MethodDelete
+	case HEAD:
+		r = http.MethodHead
+	case OPTIONS:
+		r = http.MethodOptions
+	case CONNECT:
+		r = http.MethodConnect
+	case TRACE:
+		r = http.MethodTrace
+	}
+	return r
+}
 
 //服务配置
 type serverConfig struct {
@@ -42,8 +71,35 @@ type Server struct {
 }
 
 //添加路由
-func (s *Server) AddRoute(method, url string, f actionFunc) {
-	s.router.AddRoute(method, url, f)
+func (s *Server) AddRoute(methods int, url string, f actionFunc) {
+	if GET == GET&methods {
+		s.router.AddRoute(http.MethodGet, url, f)
+	}
+	if POST == POST&methods {
+		s.router.AddRoute(http.MethodPost, url, f)
+	}
+	if PUT == PUT&methods {
+		s.router.AddRoute(http.MethodPut, url, f)
+	}
+
+	if PATCH == PATCH&methods {
+		s.router.AddRoute(http.MethodPatch, url, f)
+	}
+	if DELETE == DELETE&methods {
+		s.router.AddRoute(http.MethodDelete, url, f)
+	}
+	if HEAD == HEAD&methods {
+		s.router.AddRoute(http.MethodHead, url, f)
+	}
+	if OPTIONS == OPTIONS&methods {
+		s.router.AddRoute(http.MethodOptions, url, f)
+	}
+	if CONNECT == CONNECT&methods {
+		s.router.AddRoute(http.MethodConnect, url, f)
+	}
+	if TRACE == TRACE&methods {
+		s.router.AddRoute(http.MethodTrace, url, f)
+	}
 }
 
 //添加过滤器
@@ -145,7 +201,7 @@ func (s *Server) process(w http.ResponseWriter, req *http.Request) {
 	}()
 	//	io.WriteString(w,"URL:" + rp)
 	//静态文件请求处理
-	if req.Method == GET || req.Method == HEAD {
+	if req.Method == http.MethodGet || req.Method == http.MethodHead {
 		if s.tryServingFile(rp, req, w) {
 			return
 		}
