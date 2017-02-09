@@ -30,7 +30,7 @@ func (rt *router) AddRoute(method, pattern string, fn actionFunc) {
 	if rt.isRouteExists(pattern, method) {
 		log.Fatalf(fmt.Sprintf("error:addRoute url[%s %s] is exist", method, pattern))
 	}
-	log.Printf("addRoute [%s] [%s] [%v]\n", method, pattern, fn)
+	log.Printf("addRoute [%s]\t[%s]\t [%v]\n", method, pattern, fn)
 	r := &route{fn: fn, method: method}
 	r.regex, r.params = rt.parsePattern(pattern)
 	rt.routes = append(rt.routes, r)
