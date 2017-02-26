@@ -63,7 +63,7 @@ func (ctx *Context) WriteStream(filename string, contentType string, data []byte
 	if ctx.closed {
 		return
 	}
-	ctx.ResponseWriter.WriteHeader(ctx.status)
+	//ctx.ResponseWriter.WriteHeader(ctx.status)
 	ctx.ResponseWriter.Header().Add("Content-Disposition", "attachment;filename="+filename)
 	ctx.ResponseWriter.Header().Set("Content-Type", contentType)
 	ctx.ResponseWriter.Header().Set("Content-Length", strconv.Itoa(len(data)))
