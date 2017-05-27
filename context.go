@@ -23,6 +23,31 @@ type Context struct {
 	closed         bool
 }
 
+func (ctx *Context) GetArgStr(param, def string) string {
+	if v, ok := ctx.Params[param]; ok {
+		return v
+	} else {
+		return def
+	}
+}
+
+func (ctx *Context) GetArgInt(param string, def int) int {
+	if v, ok := ctx.Params[param]; ok {
+		i, err := strconv.Atoi(v)
+		if err != nil {
+			return def
+		}
+		return i
+	} else {
+		return def
+	}
+}
+
+func (ctx *Context) IsArgExists(param string) bool {
+	_, ok := ctx.Params[param]
+	return ok
+}
+
 func (ctx *Context) SetStatus(status int) {
 	ctx.status = status
 }
